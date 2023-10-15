@@ -34,6 +34,10 @@ AI_ASSISTANTS_SCHEMA = {
 from classes.note_class import Note
 
 class NotesDB(DatabaseManager):
+    def __init__(self, schema):
+        super().__init__(schema)
+        if not self.cursor.execute('''SELECT * FROM {}'''.format(self.db_name)).fetchone():
+            self.set_default()
     def add_element(self, fields : dict):
         fields['date'] = str(datetime.now().strftime(
             '%Y-%m-%d'
@@ -66,6 +70,16 @@ class NotesDB(DatabaseManager):
         all = [Note(note) for note in all]
         return all
     
+    def set_default(self):
+        if not self.cursor.execute('''SELECT * FROM {}'''.format(self.db_name)).fetchone():
+            self.add_element({
+                'emoji': '📝',
+                'title': 'Welcome to Duck Soup!',
+                'content': 'To get started, click on the "New Note" button on the nav bar.',
+                'date': '',
+                'last_modified': '',
+                'tags': ''
+            })
 class SettingsDB(DatabaseManager):
     def __init__(self, schema):
         super().__init__(schema)
@@ -85,7 +99,6 @@ class SettingsDB(DatabaseManager):
     def update_by_field(self, field, new_value):
         self.cursor.execute('''UPDATE {} SET {} = ?'''.format(self.db_name, field), (new_value,))
         self.conn.commit()
-
 class AIAssistantDB_(DatabaseManager):
     # assign the default values to the AI assistants database
     def __init__(self, schema):
