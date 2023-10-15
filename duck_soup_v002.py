@@ -11,7 +11,7 @@ from utils import get_random_title
 from dotenv import load_dotenv
 from utils import css
 from classes.databases_class import ArchiveNotes, Settings, AIAssistantsDB
-from ai_feature import AIAssistant
+from ai_template import AIAssistant
 from calendar_template import OnCalendar
 
 
@@ -238,9 +238,3 @@ class DuckSoup_st:
         if AI_ASSISTANT != None:
             self.AI.ChatFeatures()
 
-from ai_feature import AIAssistant
-
-if __name__ == '''__main__''':
-    app = DuckSoup_st()
-    AI = AIAssistant()
-    app.run(AI_ASSISTANT=AI)
