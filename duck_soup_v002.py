@@ -10,7 +10,7 @@ import datetime
 from utils import get_random_title
 from dotenv import load_dotenv
 from utils import css
-from databases_class import ArchiveNotes, Settings, AIAssistantsDB
+from classes.databases_class import ArchiveNotes, Settings, AIAssistantsDB
 from ai_feature import AIAssistant
 from calendar_template import OnCalendar
 
@@ -200,7 +200,7 @@ class DuckSoup_st:
                     self.openai_key = st.text_input('OpenAI Key', value=self.openai_key, type='password')
 
                 save_b = st.form_submit_button('Save', use_container_width=True)
-                if save_b and self.with_db:
+                if save_b:
                     Settings.update_by_field('summariser', summarizer_model)
                     Settings.update_by_field('qa', qa_model)
                     Settings.update_by_field('text_gen', text_generation_model)
@@ -212,9 +212,8 @@ class DuckSoup_st:
         elif self.selected_command == 'Theme':
             color_choose = st.color_picker('Pick A Color', '#00f900')
 
-    def run(self, AI_ASSISTANT = None):
-        if AI_ASSISTANT != None:
-            self.AI = AI_ASSISTANT
+    def run(self, AI_ASSISTANT):
+        self.AI = AI_ASSISTANT
 
         commands = ['AI', 'Vault', 'Theme', 'About', 'Calendar', 'Upload']
         selected_item_from_menu = self.create_sidebar_menu()
@@ -230,10 +229,9 @@ class DuckSoup_st:
         elif selected_item_from_menu == 'Upload':
             self.OnUpload()
         elif selected_item_from_menu == 'AI Assistant':
-            if AI_ASSISTANT != None:
-                self.AI.OnAIAssistant()
-            else: 
-                st.success('No AI Assistant selected')
+            st.write('AI Assistant')
+            st.write(AI_ASSISTANT)
+            self.AI.OnAIAssistant()
         elif selected_item_from_menu in [n.title for n in self.notes]:
             self.selected_note = selected_item_from_menu
             self.TextEditor()

@@ -9,7 +9,7 @@ from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from langchain.prompts import PromptTemplate
 import streamlit as st
 from langchain.chat_models import ChatOpenAI
-from databases_class import Settings, AIAssistantsDB
+from classes.databases_class import Settings, AIAssistantsDB
 
 class AIAssistant:
     def __init__(self):
@@ -67,12 +67,12 @@ class AIAssistant:
 
         if self.ai_assistants_db == []:
             self.OnNewAI()
+            st.stop()
         else:
             buttons =  [sac.ButtonsItem(label='New AI')] + [sac.ButtonsItem(label=f'{ai[1]}') for ai in self.ai_assistants_db]
             choosen = sac.buttons(buttons, format_func='title', align='center', shape='round', index = 1)
             if choosen == 'New AI':
                 self.OnNewAI()
-                st.stop()
             else:
                 if choosen != st.session_state.choosen_ai:
                     st.write('Changed')
@@ -192,3 +192,4 @@ class AIAssistant:
         if st.session_state.with_assistant_ai:
             # get name of selected ai
             self.ChatAgent()
+
