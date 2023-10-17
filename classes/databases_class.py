@@ -80,11 +80,11 @@ class NotesDB(FirestoreManager):
             n = Note(n)
         return n
     
-    def get_all(self):
-        all = super().get_all()
-        # filter the user id
-        all = [Note(note) for note in all]
-        all = [note for note in all if note.user_id == self.user_id]
+    def get_all_for_the_user(self):
+        # take the ones that match the user id filtering the user_id
+        all = self.db.collection(self.collection_name).get()
+        all = [a.to_dict() for a in all if a.to_dict()['user_id'] == self.user_id]
+        all = [Note(a) for a in all]
         return all
     
     def set_default(self):

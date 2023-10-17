@@ -32,7 +32,7 @@ class DuckSoup_st:
         ArchiveNotes = self.db
         self.settings_db = SettingsDB(SETTINGS_SCHEMA, self.user_id)
         self.ai_assistants_db = AIAssistantDB_(AI_ASSISTANTS_SCHEMA, self.user_id)
-        self.notes = ArchiveNotes.get_all()
+        self.notes = ArchiveNotes.get_all_for_the_user()
         if st.button('Clear DB'):
             ArchiveNotes.delete_all()
 
