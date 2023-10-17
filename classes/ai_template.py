@@ -9,12 +9,14 @@ from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from langchain.prompts import PromptTemplate
 import streamlit as st
 from langchain.chat_models import ChatOpenAI
-from classes.databases_class import Settings, AIAssistantsDB
 
 class AIAssistant:
-    def __init__(self):
-        self.open_ai_key = Settings.get_by_field('openai_api_key')
-        self.ai_assistants_db = AIAssistantsDB.get_all()
+    def __init__(self, Settings, AIAssistantsDB):
+        self.open_ai_key = Settings.get_by_value_at_field('openai_api_key')
+        self.ai_assistants_list = AIAssistantsDB.get_all()
+        self.ai_assistants_db = AIAssistantsDB
+        self.settings_db = Settings
+        self.user_id = self.settings_db.user_id
         
     def OnAIAssistant(self):
         # need to create a new page when we can set the role of the ai assistant and the parameters of the model
@@ -23,7 +25,7 @@ class AIAssistant:
             st.info('Please go in ⚙️ Settings and update your OpenAI API Key')
             st.stop()
         st.session_state.with_assistant_ai = self.with_ai_assistant
-        if st.session_state.with_assistant_ai and self.ai_assistants_db == []:
+        if st.session_state.with_assistant_ai and self.ai_assistants_list == []:
             with st.form(key= 'AI_Assistant'):
                 # add parameters for the AI assistant
                 save_button = st.form_submit_button('Save Now') 
@@ -32,7 +34,7 @@ class AIAssistant:
                     # save the parameters in the database
                     self.ai_assistants_db.insert(name, temperature, role, image)
                     st.experimental_rerun()
-        elif st.session_state.with_assistant_ai and self.ai_assistants_db != []:
+        elif st.session_state.with_assistant_ai and self.ai_assistants_list != []:
             self.CreateAI()
 
     def OnNewAI(self):
@@ -57,19 +59,26 @@ class AIAssistant:
                 st.write(answer)
 
             if st.form_submit_button('Save', use_container_width=True, type='primary'):
-                self.ai_assistants_db.insert(name, temperature, role, image)
+                self.ai_assistants_db.add_element({
+                        'name': name,
+                        'temperature': temperature,
+                        'role': role,
+                        'image_path': image,
+                        'user_id' : self.user_id
+                    }
+                )
                 st.success('Saved')
                 st.experimental_rerun()
             return name, temperature, role, image
         
     def CreateAI(self):
-        st.write(st.session_state.choosen_ai if st.session_state.choosen_ai else 'No AI choosen')
+        #st.write(st.session_state.choosen_ai if st.session_state.choosen_ai else 'No AI choosen')
 
         if self.ai_assistants_db == []:
             self.OnNewAI()
             st.stop()
         else:
-            buttons =  [sac.ButtonsItem(label='New AI')] + [sac.ButtonsItem(label=f'{ai[1]}') for ai in self.ai_assistants_db]
+            buttons =  [sac.ButtonsItem(label='New AI')] + [sac.ButtonsItem(label=f'{ai["name"]}') for ai in self.ai_assistants_list]
             choosen = sac.buttons(buttons, format_func='title', align='center', shape='round', index = 1)
             if choosen == 'New AI':
                 self.OnNewAI()
@@ -80,16 +89,16 @@ class AIAssistant:
                     st.session_state.langchain_messages = []
                     st.experimental_rerun()
                 # get ai from name 
-                ai = AIAssistantsDB.get_by_field('name', choosen)
+                ai = self.ai_assistants_db.get_by_field('name', choosen)
                 # transform in dict
-                ai = dict(zip(['id', 'name', 'temperature', 'role', 'image'], ai))
                 st.session_state.choosen_ai = ai['name']
+
                 if ai:
                     with st.form(key = f'{ai["name"]}'):
                         c1,c2 = st.columns([1,1])
                         name = c1.text_input('Name', value=ai['name'])
-                        image = c2.text_input('Image', value = ai['image'])
-                        st.write(bot_template_creation.replace("{{MSG}}", ai['name']).replace('{{IMAGE}}', ai['image']), 
+                        image = c2.text_input('Image', value = ai['image_path'])
+                        st.write(bot_template_creation.replace("{{MSG}}", ai['name']).replace('{{IMAGE}}', ai['image_path']), 
                                  unsafe_allow_html=True)
                         role = st.text_area('Role', value = ai['role'])
                         temperature = st.slider('Temperature', 0.0, 1.0, ai['temperature'])
@@ -107,7 +116,8 @@ class AIAssistant:
 
                         if st.form_submit_button('Save', use_container_width=True, type='primary'):
                             # get id from name
-                            self.ai_assistants_db.update_from_name(name, temperature, role, image)
+                            fields = {'name': name, 'temperature': temperature, 'role': role, 'image_path': image}
+                            self.ai_assistants_db.update_by_field('name', name, fields)
                             st.success('Saved')
                             st.experimental_rerun()
 
@@ -119,8 +129,7 @@ class AIAssistant:
                         return name, temperature, role, image
     
     def ChatAgent(self):
-        ai = AIAssistantsDB.get_by_field('name', st.session_state.choosen_ai)
-        ai = dict(zip(['id', 'name', 'temperature', 'role', 'image'], ai))
+        ai = self.ai_assistants_db.get_by_field('name', st.session_state.choosen_ai)
 
         msgs = StreamlitChatMessageHistory(key="langchain_messages")
         memory = ConversationBufferMemory(chat_memory=msgs)
@@ -143,7 +152,7 @@ class AIAssistant:
         llm_chain = LLMChain(llm=OpenAI(openai_api_key=self.open_ai_key), prompt=prompt, memory=memory)
 
         # Render current messages from StreamlitChatMessageHistory
-        def render_messages(image = ai['image'], name = ai['name']):
+        def render_messages(image = ai['image_path'], name = ai['name']):
             with st.expander("Chat History", expanded=True):
                 if st.button('Restart Memory', use_container_width=True):
                     st.session_state.langchain_messages = []
@@ -177,7 +186,7 @@ class AIAssistant:
 
     def ChatFeatures(self):
         # get open_ai_key from the config file
-        st.session_state.open_ai_key = Settings.get_by_field('openai_api_key')
+        st.session_state.open_ai_key = self.settings_db.get_by_value_at_field('openai_api_key')
         try:
             open_ai_key = st.session_state.open_ai_key
         except:
@@ -185,11 +194,10 @@ class AIAssistant:
             "Please enter your OpenAI API key", type="password")
             save_button = st.button("Save key")
             if save_button:
-                Settings.update_by_field('openai_key', open_ai_key)
+                self.settings_db.update_by_field('openai_key', open_ai_key)
                 # save as session state
                 st.session_state.open_ai_key = open_ai_key
 
         if st.session_state.with_assistant_ai:
             # get name of selected ai
             self.ChatAgent()
-

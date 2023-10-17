@@ -4,15 +4,17 @@ This file contains the class for the note object.
 import streamlit as st
 class Note:
     ''' the note takes a list of values from the database and converts it into a note object'''
-    def __init__(self, note : list, db_name = 'databases/notes.db'):
-        self.id = note[0] 
-        self.emoji = note[1] 
-        self.title = note[2] 
-        self.content = note[3]
-        self.date = note[4]
-        self.last_modified = note[5]
-        self.tags = note[6]
-        self.fields = ['emoji', 'title', 'content', 'date', 'last_modified', 'tags']
+    def __init__(self, note : dict, db_name = 'databases/notes.db'):
+        # from dict to list if needed
+        self.id = note['id']
+        self.emoji = note['emoji'] 
+        self.title = note['title']
+        self.content = note['content']
+        self.date = note['date']
+        self.last_modified = note['last_modified']
+        self.tags = note['tags']
+        self.user_id = note['user_id']
+        self.fields = ['emoji', 'title', 'content', 'date', 'last_modified', 'tags', 'id']
 
     def update(self, field = None, value = None, save = True, fields : dict = None):
         if field and value is None and fields is None:

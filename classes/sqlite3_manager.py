@@ -4,9 +4,10 @@ date  : 2023-10-15
 
 Rewriting the database module to using a more dynamic approach
 '''
+
 import sqlite3
 
-class DatabaseManager:
+class SQLite3Manager:
     '''
     ```python
     SCHEMA_EXAMPLE = {
@@ -138,7 +139,7 @@ if __name__ == "__main__":
         }
     }
 
-    NotesDB = DatabaseManager(NOTES_SCHEMA)
+    NotesDB = SQLite3Manager(NOTES_SCHEMA)
     # add a note
     print(NotesDB.get_all())
     print(len(NotesDB.get_all()))
